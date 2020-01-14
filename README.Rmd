@@ -10,11 +10,11 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-# ISI WSC 2019 Scheduler
+# rstudio::conf(2020) agenda
 
 <!-- badges: start -->
 <!-- badges: end -->
 
 ---
 
-Accessible at [shiny.mitchelloharawild.com/wsc2019](https://shiny.mitchelloharawild.com/wsc2019).
+Accessible at [shiny.mitchelloharawild.com/rstudioconf20](https://shiny.mitchelloharawild.com/rstudioconf20).

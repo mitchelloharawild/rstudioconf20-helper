@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ISI WSC 2019 Scheduler
+# rstudio::conf(2020) agenda
 
 <!-- badges: start -->
 
@@ -10,4 +10,4 @@
 -----
 
 Accessible at
-[shiny.mitchelloharawild.com/wsc2019](https://shiny.mitchelloharawild.com/wsc2019).
+[shiny.mitchelloharawild.com/rstudioconf20](https://shiny.mitchelloharawild.com/rstudioconf20).
