@@ -1,55 +1,46 @@
-library(rvest)
+library(jsonlite)
 library(tidyverse)
 library(lubridate)
 library(glue)
 
-web <- read_html("https://www.isi2019.org/scientific-programme-2/")
-days <- html_nodes(web, ".insert-page")
+event <- read_json("R/event.json")
+speakers <- map_dfr(event$speakerInfoSnapshot$speakers, ~ as_tibble(.x[c("id", "firstName", "lastName", "company", "title", "biography")])) %>% 
+  distinct() %>% 
+  mutate(name = glue("{firstName} {lastName}"))
 
-schedule <- days %>% 
-  set_names(c("2019-08-19", "2019-08-20", "2019-08-21", "2019-08-22", "2019-08-23")) %>% 
-  map_dfr(function(x){
-    html_nodes(x, ".sow-accordion-panel") %>% 
-      map_dfr(function(y){
-        title <- html_text(html_nodes(y, ".sow-accordion-title > .ac-main"))
-        upper <- html_text(html_nodes(y, ".sow-accordion-panel-border > .ac-upper"))
-        if(is_empty(upper)) upper <- ""
-        lower <- html_nodes(y, ".sow-accordion-panel-border > .ac-lower")
-        
-        map_dfr(lower, ~ tibble(Title = html_text(html_nodes(., ".ac-topic")),
-                                Name = html_text(html_nodes(., ".sp-name")))) %>% 
-          mutate(
-            Time = title[1], id = title[2], Session = title[3], Location = title[4],
-            Meta = upper
-          )
-      })
-  }, .id = "Date")
+event$products$sessionContainer
 
-schedule %>% 
-  separate(Name, into = c("Name", "Organisation", "Country"), sep = ", ", 
-           extra = "drop", fill = "right") %>% 
-  separate(Time, c("Start", "End")) %>% 
+read_json("R/products.json")
+
+products <- read_json("R/products.json")
+
+keys <- imap_dfr(products$sortKeys, function(x, id){
+  tibble(id = id, category = x[[4]])
+})
+
+products <- imap_dfr(products$sessionProducts, function(x, id){
+  tibble(
+    id = id,
+    start_time = as_datetime(x$startTime, tz = "PST"),
+    end_time = as_datetime(x$endTime, tz = "PST"),
+    categoryId = x$categoryId,
+    capacityId = x$waitlistCapacityId,
+    speakers = glue_collapse(speakers$name[speakers$id %in% names(x$speakerIds)], ", "),
+    title = x$name,
+    location = x$locationName %||% "",
+    text = glue_collapse(fromJSON(x$richTextDescription%||%"{}")$content$blocks$text, "\n\n")
+  )
+})
+
+left_join(
+  products,
+  keys,
+  by = "id"
+) %>% 
   mutate(
-    Start = ymd_hm(paste(Date, Start), tz = "Asia/Kuala_Lumpur"),
-    End = ymd_hm(paste(Date, End), tz = "Asia/Kuala_Lumpur"),
-    Day = wday(Start, label = TRUE, abbr = FALSE)
-  ) %>% 
-  group_by(id) %>% 
-  mutate(
-    Start = Start + (End-Start)/n()*(row_number()-1),
-    End = Start + min(End-Start),
     gcal = gsub(
       " ", "%20",
-      glue("https://www.google.com/calendar/render?action=TEMPLATE&&text={gsub(' ', '+', Title)}&&details={Session}+({id})%0A{Name},+{Organisation},+{Country}&&location=Kuala+Lumpur+Convention+Centre,+{gsub(' ', '+', Location)}&&dates={format(Start, format = '%Y%m%dT%H%M%SZ', tz = 'GMT')}%2F{format(End, format = '%Y%m%dT%H%M%SZ', tz = 'GMT')}")
+      glue("https://www.google.com/calendar/render?action=TEMPLATE&&text={gsub(' ', '+', title)}&&details=Speakers:+{speakers})%0A{text}&&location=Hilton+San+Francisco+Union+Square,+{gsub(' ', '+', location)}&&dates={format(start_time, format = '%Y%m%dT%H%M%SZ', tz = 'PST')}%2F{format(end_time, format = '%Y%m%dT%H%M%SZ', tz = 'PST')}")
     )
   ) %>% 
-  ungroup() %>% 
-  mutate(
-    end_time = End,
-    Start = as.numeric(format(Start, "%H%M")),
-    End = as.numeric(format(End, "%H%M"))
-  ) %>% 
-  select(end_time, gcal, Day, Start, End, Title, Name, Organisation, Country, Session, Location, id, Meta) %>% 
-  readr::write_rds("app/data/schedule.Rda")
-
-
+  write_rds("app/data/sessions.Rda")
