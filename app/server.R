@@ -1,9 +1,21 @@
 library(DT)
-schedule <- readr::read_rds("data/schedule.Rda")
+library(lubridate)
+schedule <- readr::read_rds("data/sessions.Rda")
 
 function(session, input, output) {
   dt_schedule <- reactive({
-    if(input$btn_oldEvents) schedule[,-1] else schedule[schedule$end_time > Sys.time(),-1]
+    if(!input$btn_oldEvents) schedule <- schedule[schedule$end_time > Sys.time(),]
+    schedule %>% 
+      transmute(
+        gcal,
+        Day = wday(start_time, label = TRUE, abbr = FALSE),
+        Start = format(start_time, format = "%H%M"),
+        End = format(end_time, format = "%H%M"),
+        Title = title,
+        Speakers = speakers,
+        Room = location,
+        Category = category
+      )
   })
   
   output$tbl_schedule <- renderDT({
