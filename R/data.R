@@ -4,13 +4,10 @@ library(lubridate)
 library(glue)
 
 event <- read_json("R/event.json")
+
 speakers <- map_dfr(event$speakerInfoSnapshot$speakers, ~ as_tibble(.x[c("id", "firstName", "lastName", "company", "title", "biography")])) %>% 
   distinct() %>% 
   mutate(name = glue("{firstName} {lastName}"))
-
-event$products$sessionContainer
-
-read_json("R/products.json")
 
 products <- read_json("R/products.json")
 
@@ -40,7 +37,7 @@ left_join(
   mutate(
     gcal = gsub(
       " ", "%20",
-      glue("https://www.google.com/calendar/render?action=TEMPLATE&&text={gsub(' ', '+', title)}&&details=Speakers:+{speakers})%0A{text}&&location=Hilton+San+Francisco+Union+Square,+{gsub(' ', '+', location)}&&dates={format(start_time, format = '%Y%m%dT%H%M%SZ', tz = 'PST')}%2F{format(end_time, format = '%Y%m%dT%H%M%SZ', tz = 'PST')}")
+      glue("https://www.google.com/calendar/render?action=TEMPLATE&&text={gsub(' ', '+', title)}&&details=Speakers:+{speakers}%0A%0A{gsub('\n', '%0A', text)}&&location=Hilton+San+Francisco+Union+Square,+{gsub(' ', '+', location)}&&dates={format(start_time, format = '%Y%m%dT%H%M%SZ', tz = 'UTC')}%2F{format(end_time, format = '%Y%m%dT%H%M%SZ', tz = 'UTC')}")
     )
   ) %>% 
   write_rds("app/data/sessions.Rda")
