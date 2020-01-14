@@ -9,8 +9,8 @@ function(session, input, output) {
       transmute(
         gcal,
         Day = wday(start_time, label = TRUE, abbr = FALSE),
-        Start = format(start_time, format = "%H%M"),
-        End = format(end_time, format = "%H%M"),
+        Start = format(start_time, format = "%H%M", tz = "US/Pacific"),
+        End = format(end_time, format = "%H%M", tz = "US/Pacific"),
         Title = title,
         Speakers = speakers,
         Room = location,
