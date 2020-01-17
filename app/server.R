@@ -30,7 +30,7 @@ function(session, input, output) {
       options = list(
         autoWidth = TRUE,
         paging = FALSE,
-        scrollY = "650px",
+        scrollY = "75vh",
         columnDefs = list(
           list(visible = FALSE, targets = 0:1)
         ),
