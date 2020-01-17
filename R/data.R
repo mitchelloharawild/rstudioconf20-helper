@@ -16,7 +16,15 @@ keys <- imap_dfr(products$sortKeys, function(x, id){
 })
 
 products <- imap_dfr(products$sessionProducts, function(x, id){
-  tibble(
+  desc <- if(!is.null(x$richTextDescription)){
+    glue_collapse(fromJSON(x$richTextDescription%||%"{}")$content$blocks$text, "\n\n")
+  } else if(!is.null(x$description)){
+    x$description
+  } else{
+    warning(glue("Could not find description for session {id}"))
+    ""
+  }
+  out <- tibble(
     id = id,
     start_time = as_datetime(x$startTime, tz = "PST"),
     end_time = as_datetime(x$endTime, tz = "PST"),
@@ -25,8 +33,10 @@ products <- imap_dfr(products$sessionProducts, function(x, id){
     speakers = glue_collapse(speakers$name[speakers$id %in% names(x$speakerIds)], ", "),
     title = x$name,
     location = x$locationName %||% "",
-    text = glue_collapse(fromJSON(x$richTextDescription%||%"{}")$content$blocks$text, "\n\n")
+    text = desc
   )
+  if(nrow(out) != 1) stop(glue("Something went wrong with session {id}"))
+  out
 })
 
 left_join(
