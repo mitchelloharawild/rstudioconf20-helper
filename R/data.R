@@ -24,13 +24,18 @@ products <- imap_dfr(products$sessionProducts, function(x, id){
     warning(glue("Could not find description for session {id}"))
     ""
   }
+  
+  speakers <- glue_collapse(speakers$name[speakers$id %in% names(x$speakerIds)], ", ")
+  if(is_empty(speakers)) speakers <- ""
+  
+  if(speakers == "Gergely Daroczi") browser()
   out <- tibble(
     id = id,
     start_time = as_datetime(x$startTime, tz = "PST"),
     end_time = as_datetime(x$endTime, tz = "PST"),
     categoryId = x$categoryId,
     capacityId = x$waitlistCapacityId,
-    speakers = glue_collapse(speakers$name[speakers$id %in% names(x$speakerIds)], ", "),
+    speakers =  speakers,
     title = x$name,
     location = x$locationName %||% "",
     text = desc

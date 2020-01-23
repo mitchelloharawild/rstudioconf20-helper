@@ -11,7 +11,7 @@ function(session, input, output) {
       transmute(
         gcal,
         text = paste("<div>", str_replace_all(text, "\n", "<br>"), "</div>"),
-        Day = wday(start_time, label = TRUE, abbr = FALSE),
+        Day = format(start_time, format = "%A", tz = "US/Pacific"),
         Start = format(start_time, format = "%H%M", tz = "US/Pacific"),
         End = format(end_time, format = "%H%M", tz = "US/Pacific"),
         Title = title,
